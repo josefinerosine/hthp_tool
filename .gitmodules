@@ -1,0 +1,6 @@
+[submodule "hthp_project_final/hthp_project_final/heatpumps"]
+	path = hthp_project_final/hthp_project_final/heatpumps
+	url = https://github.com/jfreissmann/heatpumps
+[submodule "hthp_project_final/heatpumps"]
+	path = hthp_project_final/heatpumps
+	url = https://github.com/jfreissmann/heatpumps

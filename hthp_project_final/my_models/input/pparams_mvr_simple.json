@@ -1,0 +1,39 @@
+{
+    "setup": {
+        "name": "Mechanical Vapor Recompression - Simple",
+        "type": "MVRSimple",
+        "refrig": "R717"
+    },
+    "fluids": {
+        "wf": "R717",
+        "si": "H2O",
+        "so": null
+    },
+    "inlet": {
+        "T": 50.0,
+        "p": 1.0,
+        "m_dot": 10.0
+    },
+    "evap": {
+        "ttd_l": 5.0,
+        "pr": 0.98,
+        "Q_evap": 500.0
+    },
+    "comp": {
+        "eta_s": 0.80,
+        "eta_mech": 1.0
+    },
+    "ambient": {
+        "T": 15.0,
+        "p": 1.013
+    },
+    "offdesign": {
+        "save_results": false,
+        "T_hs_ff_start": 50.0,
+        "T_hs_ff_end": 80.0,
+        "T_hs_ff_steps": 7,
+        "partload_min": 0.5,
+        "partload_max": 1.0,
+        "partload_steps": 11
+    }
+}
