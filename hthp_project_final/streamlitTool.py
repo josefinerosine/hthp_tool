@@ -170,9 +170,241 @@ for _k, _v in _defaults.items():
         st.session_state[_k] = _v
 
 # ---------------------------------------------------------------------------
-# Global title
+# Global theme / styling  (visual layer only – no logic changes)
 # ---------------------------------------------------------------------------
-st.title("High Temperature Heat Pump Modeling Environment")
+_GLOBAL_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --brand-900:#050544;
+  --brand-700:#00008C;   /* Brillantblau */
+  --brand-500:#2b3bd4;
+  --brand-300:#8f97e8;
+  --brand-100:#e9ebff;
+  --ink:#1b2138;
+  --muted:#5b6478;
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --border:#e5e8f0;
+  --ok:#1e9e6a; --warn:#c9820b; --err:#d64545;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(16,24,40,.04), 0 4px 16px rgba(16,24,40,.05);
+}
+
+/* ---- base typography & canvas ---------------------------------------- */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"]{
+  font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+[data-testid="stAppViewContainer"]{ background:var(--bg); }
+[data-testid="stMainBlockContainer"], .main .block-container{
+  max-width:1180px; padding-top:1.1rem; padding-bottom:3rem;
+}
+[data-testid="stHeader"]{ background:transparent; }
+[data-testid="stDecoration"]{ display:none; }
+footer{ visibility:hidden; height:0; }
+
+[data-testid="stAppViewContainer"] .stMarkdown p,
+[data-testid="stAppViewContainer"] .stMarkdown li{ color:var(--ink); line-height:1.6; }
+
+h1,h2,h3,h4,h5{ color:var(--ink); font-weight:700; letter-spacing:-.01em; }
+[data-testid="stMainBlockContainer"] h2{ font-size:1.45rem; margin-top:.6rem; }
+[data-testid="stMainBlockContainer"] h4{ font-size:1.03rem; font-weight:700; margin-top:.4rem; }
+[data-testid="stMainBlockContainer"] h4::before{
+  content:""; display:inline-block; width:4px; height:.95em;
+  background:var(--brand-500); border-radius:3px;
+  margin-right:.55rem; vertical-align:-1px;
+}
+[data-testid="stMainBlockContainer"] hr{
+  margin:1.1rem 0; border:none; border-top:1px solid var(--border);
+}
+
+/* ---- KPI metric cards ------------------------------------------------ */
+[data-testid="stMetric"]{
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:15px 18px; box-shadow:var(--shadow);
+}
+[data-testid="stMetricLabel"] p{
+  color:var(--muted); font-size:.76rem; font-weight:600;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+[data-testid="stMetricValue"]{ color:var(--brand-700); font-weight:700; }
+
+/* ---- buttons --------------------------------------------------------- */
+.stButton > button{
+  border-radius:10px; border:1px solid var(--border);
+  background:var(--card); color:var(--ink); font-weight:600;
+  padding:.5rem 1.05rem; box-shadow:0 1px 2px rgba(16,24,40,.04);
+  transition:all .15s ease;
+}
+.stButton > button:hover{ border-color:var(--brand-300); color:var(--brand-700); }
+.stButton > button[kind="primary"]{
+  background:var(--brand-700); border-color:var(--brand-700); color:#fff;
+}
+.stButton > button[kind="primary"]:hover{
+  background:var(--brand-500); border-color:var(--brand-500); color:#fff;
+}
+.stDownloadButton > button{ border-radius:10px; font-weight:600; }
+
+/* ---- tabs ------------------------------------------------------------ */
+[data-testid="stTabs"] [data-baseweb="tab-list"]{
+  gap:2px; border-bottom:1px solid var(--border);
+}
+[data-testid="stTabs"] [data-baseweb="tab"]{
+  padding:9px 18px; color:var(--muted); font-weight:600;
+}
+[data-testid="stTabs"] [aria-selected="true"]{ color:var(--brand-700); }
+[data-testid="stTabs"] [data-baseweb="tab-highlight"]{ background:var(--brand-700); }
+
+/* ---- expanders / dataframes / alerts --------------------------------- */
+[data-testid="stExpander"]{
+  border:1px solid var(--border); border-radius:var(--radius);
+  background:var(--card); box-shadow:var(--shadow); overflow:hidden;
+}
+[data-testid="stExpander"] summary{ font-weight:600; }
+[data-testid="stDataFrame"], [data-testid="stTable"]{
+  border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+}
+[data-testid="stAlert"]{ border-radius:12px; }
+
+/* ---- app hero banner ------------------------------------------------- */
+.app-hero{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  background:linear-gradient(120deg, var(--brand-700), var(--brand-500));
+  color:#fff; border-radius:16px; padding:18px 24px; margin:.1rem 0 1.4rem;
+  box-shadow:0 10px 26px rgba(0,0,140,.18);
+}
+.app-hero-left{ display:flex; align-items:center; gap:16px; }
+.app-hero-icon{
+  font-size:1.7rem; background:rgba(255,255,255,.16);
+  width:52px; height:52px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+}
+.app-hero-title{ font-size:1.3rem; font-weight:800; letter-spacing:-.02em; line-height:1.2; color:#fff; }
+.app-hero-sub{ font-size:.84rem; opacity:.9; margin-top:3px; color:#fff; }
+.app-hero-badge{
+  background:rgba(255,255,255,.16); color:#fff; padding:7px 15px;
+  border-radius:999px; font-size:.72rem; font-weight:700;
+  letter-spacing:.06em; white-space:nowrap;
+}
+
+/* ---- sidebar (light, readable) --------------------------------------- */
+[data-testid="stSidebar"]{ background:var(--card); border-right:1px solid var(--border); }
+[data-testid="stSidebar"] .stMarkdown p,
+[data-testid="stSidebar"] li,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"]{ color:var(--ink); }
+[data-testid="stSidebar"] h3{ font-size:.95rem; margin:.2rem 0 .4rem; }
+[data-testid="stSidebar"] .stMarkdown p{ font-size:.82rem; margin-bottom:.18rem; }
+
+.sb-brand{
+  display:flex; align-items:center; gap:11px;
+  padding:2px 2px 14px; border-bottom:1px solid var(--border); margin-bottom:14px;
+}
+.sb-brand-mark{
+  font-size:1.25rem; background:var(--brand-100); color:var(--brand-700);
+  width:38px; height:38px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+}
+.sb-brand-text{ font-weight:800; color:var(--brand-700); font-size:1.02rem; letter-spacing:-.01em; }
+.sb-label{ font-size:.7rem; font-weight:700; letter-spacing:.09em; color:var(--muted); margin:2px 2px 8px; }
+.sb-divider{ height:1px; background:var(--border); margin:16px 0 8px; }
+
+/* sidebar nav buttons rendered as menu items */
+[data-testid="stSidebar"] .stButton > button{
+  width:100%; justify-content:flex-start; text-align:left;
+  border:none; background:transparent; color:var(--muted);
+  font-weight:600; padding:.5rem .75rem; border-radius:10px; box-shadow:none;
+}
+[data-testid="stSidebar"] .stButton > button p{ text-align:left; width:100%; font-size:.86rem; }
+[data-testid="stSidebar"] .stButton > button:hover{ background:var(--brand-100); color:var(--brand-700); }
+[data-testid="stSidebar"] .stButton > button:hover p{ color:var(--brand-700); }
+[data-testid="stSidebar"] .stButton > button[kind="primary"]{ background:var(--brand-700); color:#fff; }
+[data-testid="stSidebar"] .stButton > button[kind="primary"] p{ color:#fff !important; }
+[data-testid="stSidebar"] .stButton > button:disabled{ color:#b6bdcd; background:transparent; }
+[data-testid="stSidebar"] .stButton > button:disabled p{ color:#b6bdcd; }
+</style>
+"""
+
+
+def _inject_global_style():
+    st.markdown(_GLOBAL_CSS, unsafe_allow_html=True)
+
+
+def _render_app_header():
+    """Styled header banner replacing the plain st.title (visual only)."""
+    page = st.session_state.get('page', 'upload')
+    step_map = {
+        'upload':          (1, 'Upload'),
+        'manual_entry':    (1, 'Upload'),
+        'pinch_analysis':  (2, 'Pinch Analysis'),
+        'case_generation': (3, 'Case Generation'),
+        'calculation':     (4, 'Calculation'),
+        'results':         (4, 'Results'),
+    }
+    step_no, step_name = step_map.get(page, (1, 'Upload'))
+    st.markdown(
+        f"""
+        <div class="app-hero">
+          <div class="app-hero-left">
+            <div class="app-hero-icon">🔥</div>
+            <div>
+              <div class="app-hero-title">High-Temperature Heat Pump Modeling Environment</div>
+              <div class="app-hero-sub">Pre-selection &amp; comparison of industrial heat-supply architectures · HTHP · MVR · Hybrid</div>
+            </div>
+          </div>
+          <div class="app-hero-badge">STEP {step_no} / 4 · {step_name.upper()}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_sidebar_nav():
+    """Persistent workflow navigation in the sidebar (respects gating)."""
+    page        = st.session_state.get('page', 'upload')
+    has_data    = st.session_state.get('questionnaire_data')    is not None
+    has_results = st.session_state.get('calculation_results')   is not None
+
+    # (number, label, target page, {pages that mark this step active}, reachable)
+    steps = [
+        ('1', 'Upload & Parameters', 'upload',          {'upload', 'manual_entry'}, True),
+        ('2', 'Pinch Analysis',      'pinch_analysis',  {'pinch_analysis'},          has_data),
+        ('3', 'Case Generation',     'case_generation', {'case_generation'},         has_data),
+        ('4', 'Results',             'results',         {'calculation', 'results'},  has_results),
+    ]
+
+    with st.sidebar:
+        st.markdown(
+            '<div class="sb-brand">'
+            '<span class="sb-brand-mark">🔥</span>'
+            '<span class="sb-brand-text">HTHP&nbsp;Suite</span>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="sb-label">WORKFLOW</div>', unsafe_allow_html=True)
+
+        for num, label, target, active_pages, reachable in steps:
+            is_active = page in active_pages
+            if st.button(
+                f"{num}   {label}",
+                key=f"nav_{target}",
+                type=('primary' if is_active else 'secondary'),
+                disabled=(not reachable and not is_active),
+                use_container_width=True,
+            ):
+                st.session_state.page = target
+                st.rerun()
+
+        st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------------
+# Apply theme + header  (order: style → sidebar nav → header)
+# ---------------------------------------------------------------------------
+_inject_global_style()
+_render_sidebar_nav()
+_render_app_header()
 
 
 # ============================================================================
@@ -438,26 +670,153 @@ def _ui_cases_to_calc_format(ui_cases: list) -> list:
 # HELPER: matplotlib figure renderer with PDF download button
 # ============================================================================
 
-def _pyplot_with_download(fig, filename: str, button_label: str = "⬇ Download PDF"):
+def _pyplot_with_download(fig, filename: str, button_label: str = "⬇ Download PDF",
+                          max_width: int = 820):
     """
-    Renders a matplotlib figure via st.pyplot and adds a small PDF download button.
+    Renders a matplotlib figure as a responsive, vector (SVG) image and adds a
+    small PDF download button below it.
+
+    Instead of a fixed-size raster stretched edge-to-edge across the (wide)
+    page, the chart is embedded as an SVG that:
+      * is centred and constrained to `max_width` pixels, so it no longer fills
+        the whole window right up to the border, and
+      * uses width:100% / height:auto, so it scales cleanly with the window
+        size and the browser zoom level (crisp at any zoom, being vector).
 
     Parameters
     ----------
-    fig      : matplotlib Figure
-    filename : suggested filename for the download (without extension)
+    fig          : matplotlib Figure
+    filename     : suggested filename for the download (without extension)
     button_label : label shown on the download button
+    max_width    : maximum on-screen width of the chart in pixels
     """
     import io
-    buf = io.BytesIO()
-    fig.savefig(buf, format='pdf', bbox_inches='tight')
-    buf.seek(0)
-    pdf_bytes = buf.read()
+    import re
 
-    st.pyplot(fig)
+    # --- SVG for crisp, resolution-independent scaling ----------------------
+    sbuf = io.StringIO()
+    fig.savefig(sbuf, format='svg', bbox_inches='tight')
+    svg = sbuf.getvalue()
+    svg = svg[svg.find('<svg'):]          # strip xml declaration / doctype
+
+    # Exact aspect ratio from the viewBox (accounts for bbox_inches='tight').
+    aspect = 0.4
+    m = re.search(r'viewBox="[\d.]+ [\d.]+ ([\d.]+) ([\d.]+)"', svg)
+    if m:
+        vb_w, vb_h = float(m.group(1)), float(m.group(2))
+        if vb_w:
+            aspect = vb_h / vb_w
+
+    box_id = f"resp_{filename}_{id(fig)}"
+    # Height the iframe needs when the chart is at its maximum on-screen width.
+    frame_h = int(max_width * aspect) + 6
+
+    html = f"""
+    <div style="width:100%; display:flex; justify-content:center;">
+      <div id="{box_id}" style="width:100%; max-width:{max_width}px;">
+        <style>
+          #{box_id} svg {{ width:100% !important; height:auto !important;
+                            display:block; }}
+        </style>
+        {svg}
+      </div>
+    </div>
+    """
+    st.components.v1.html(html, height=frame_h)
+
+    # --- PDF download (vector, independent of on-screen scaling) ------------
+    pbuf = io.BytesIO()
+    fig.savefig(pbuf, format='pdf', bbox_inches='tight')
+    pbuf.seek(0)
     st.download_button(
         label=button_label,
-        data=pdf_bytes,
+        data=pbuf.read(),
+        file_name=f"{filename}.pdf",
+        mime="application/pdf",
+        key=f"dl_{filename}_{id(fig)}",
+    )
+
+
+def _pyplot_interactive(fig, filename: str, height: int = 660,
+                        button_label: str = "⬇ Download PDF"):
+    """
+    Renders a matplotlib figure as an inline SVG that (1) scales with the
+    window/container width and (2) can be zoomed with the mouse wheel and
+    panned by dragging (via the svg-pan-zoom library from a CDN).
+
+    The setup re-fits itself when the container first gains a real size, so
+    figures placed in a tab that is hidden on first render (e.g. the Grand
+    Composite Curve) still appear correctly once their tab is opened.
+
+    A PDF download button (vector, unaffected by zoom) is added below.
+    """
+    import io
+
+    # --- SVG for crisp, interactive display ---------------------------------
+    sbuf = io.StringIO()
+    fig.savefig(sbuf, format='svg', bbox_inches='tight')
+    svg = sbuf.getvalue()
+    svg = svg[svg.find('<svg'):]          # strip xml declaration / doctype
+
+    box_id = f"pz_{filename}_{id(fig)}"
+    html = f"""
+    <div id="{box_id}_wrap"
+         style="width:96%; height:{height}px; margin:0 auto;
+                border:1px solid #e6e6e6; border-radius:10px;
+                background:#fff; overflow:hidden;">
+      {svg}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <script>
+      (function() {{
+        var wrap  = document.getElementById("{box_id}_wrap");
+        var svgEl = wrap.querySelector("svg");
+        svgEl.setAttribute("width", "100%");
+        svgEl.setAttribute("height", "100%");
+        svgEl.style.width = "100%";
+        svgEl.style.height = "100%";
+        var pz = null;
+        function ready() {{
+          return typeof svgPanZoom !== "undefined"
+                 && wrap.clientWidth > 0 && wrap.clientHeight > 0;
+        }}
+        function setup() {{
+          if (pz || !ready()) return;
+          pz = svgPanZoom(svgEl, {{
+            zoomEnabled: true, mouseWheelZoomEnabled: true,
+            controlIconsEnabled: true, fit: true, center: true,
+            minZoom: 0.5, maxZoom: 20, zoomScaleSensitivity: 0.3
+          }});
+        }}
+        function refit() {{
+          if (!pz) {{ setup(); return; }}
+          pz.resize(); pz.fit(); pz.center();
+        }}
+        // Retry briefly to catch the async CDN script load.
+        var tries = 0;
+        var timer = setInterval(function() {{
+          setup();
+          if (pz || tries++ > 60) clearInterval(timer);
+        }}, 150);
+        window.addEventListener("load", setup);
+        // Re-fit when the container first gains size (hidden tab -> visible).
+        if (window.ResizeObserver) {{
+          new ResizeObserver(function() {{
+            if (!pz) setup(); else refit();
+          }}).observe(wrap);
+        }}
+      }})();
+    </script>
+    """
+    st.components.v1.html(html, height=height + 12)
+
+    # --- PDF download (vector, independent of on-screen zoom) ---------------
+    pbuf = io.BytesIO()
+    fig.savefig(pbuf, format='pdf', bbox_inches='tight')
+    pbuf.seek(0)
+    st.download_button(
+        label=button_label,
+        data=pbuf.read(),
         file_name=f"{filename}.pdf",
         mime="application/pdf",
         key=f"dl_{filename}_{id(fig)}",
@@ -2463,11 +2822,6 @@ elif st.session_state.page == 'pinch_analysis':
 
         st.success("✅ Pinch parameters generated")
 
-        if pinch_input.get('warnings'):
-            st.warning("⚠️ Notices during parameter generation:")
-            for w in pinch_input['warnings']:
-                st.write(f"  • {w}")
-
         st.markdown("---")
 
         with st.spinner("Running pinch analysis…"):
@@ -2504,7 +2858,7 @@ elif st.session_state.page == 'pinch_analysis':
             try:
                 fig, ax = plt.subplots(figsize=(11, 7))
                 analyzer.plot(ax=ax)
-                _pyplot_with_download(fig, 'pinch_tq_diagram')
+                _pyplot_interactive(fig, 'pinch_tq_diagram')
             except Exception as e:
                 st.error(f"❌ Error plotting T-Q diagram: {e}")
 
@@ -2513,7 +2867,7 @@ elif st.session_state.page == 'pinch_analysis':
             try:
                 fig, ax = plt.subplots(figsize=(7, 7))
                 analyzer.plot_gcc(ax=ax)
-                _pyplot_with_download(fig, 'pinch_grand_composite_curve')
+                _pyplot_interactive(fig, 'pinch_grand_composite_curve')
             except Exception as e:
                 st.error(f"❌ Error plotting GCC: {e}")
 
@@ -2661,8 +3015,8 @@ elif st.session_state.page == 'case_generation':
                             ['Base', 'Intercooling', 'Economizer', 'Flash Tank'],
                             key='cascade_sub_sel',
                             help=(
-                                'Base: two independent sub-circuits (LP + HP) sharing a heat exchanger.\n'
-                                'Intercooling: intermediate cooling between LP and HP compressor.\n'
+                                'Base: two independent sub-circuits (LT + HT) sharing a heat exchanger.\n'
+                                'Intercooling: intermediate cooling between LT and HT compressor.\n'
                                 'Economizer: partial evaporation at midpressure to reduce compressor work.\n'
                                 'Flash Tank: flash vessel separates liquid/vapor at midpressure.'
                             ),
@@ -2701,7 +3055,7 @@ elif st.session_state.page == 'case_generation':
                                 ),
                                 key='comp_var_sel',
                                 help=(
-                                    'Series: LP and HP compressors are in series — all refrigerant '
+                                    'Series: LT and HT compressors are in series — all refrigerant '
                                     'passes through both stages sequentially.\n'
                                     'Parallel (PC = Parallel Compression): a separate smaller compressor '
                                     'handles only the midpressure flash vapor, while the main compressor '
@@ -2725,7 +3079,7 @@ elif st.session_state.page == 'case_generation':
                             elif cascade_sub == 'Base':
                                 ihx_variant = '2ihx'
                                 st.caption(
-                                    '2× IHX: one internal heat exchanger per sub-circuit (LP and HP), '
+                                    '2× IHX: one internal heat exchanger per sub-circuit (LT and HT), '
                                     'each in the standard position between condenser and expansion valve.'
                                 )
                             else:
@@ -2734,9 +3088,9 @@ elif st.session_state.page == 'case_generation':
                                 pos_opts = ['A', 'B'] + (['both'] if allow_both else [])
                                 def _pos_label(x):
                                     if x == 'A':
-                                        return 'Variant A  — LP side  (before economizer)'
+                                        return 'Variant A  — LT side  (before economizer)'
                                     if x == 'B':
-                                        return 'Variant B  — HP side  (after economizer)'
+                                        return 'Variant B  — HT side  (after economizer)'
                                     return 'Both sides  (A + B, parallel compression only)'
                                 ihx_variant = st.radio(
                                     'IHX position',
@@ -2744,14 +3098,14 @@ elif st.session_state.page == 'case_generation':
                                     format_func=_pos_label,
                                     key='ihx_pos_sel',
                                     help=(
-                                        'Variant A: IHX placed between the LP compressor outlet and the '
-                                        'economizer (midpressure level). The cold LP suction vapor from '
+                                        'Variant A: IHX placed between the LT compressor outlet and the '
+                                        'economizer (midpressure level). The cold LT suction vapor from '
                                         'the evaporator subcools the high-pressure liquid — effective on '
-                                        'the low-pressure side.\n\n'
-                                        'Variant B: IHX placed between the economizer and the HP '
-                                        'compressor inlet. The midpressure vapor superheats the HP '
-                                        'suction gas before it enters the high-pressure compressor — '
-                                        'effective on the high-pressure side.\n\n'
+                                        'the low-temperature side.\n\n'
+                                        'Variant B: IHX placed between the economizer and the HT '
+                                        'compressor inlet. The midpressure vapor superheats the HT '
+                                        'suction gas before it enters the high-temperature compressor — '
+                                        'effective on the high-temperature side.\n\n'
                                         'Both (PC only): one IHX in each position simultaneously.'
                                     ),
                                 )
@@ -2931,27 +3285,27 @@ elif st.session_state.page == 'case_generation':
                 st.markdown(
                     "<div style='background:#dbeeff;border-radius:8px;padding:10px 14px 4px 14px;"
                     "border-left:4px solid #1a7acc;color:#0d2a44'>"
-                    "<b>🔵 LP Circuit – Low Pressure</b><br>"
+                    "<b>🔵 LT Circuit – Low Temperature</b><br>"
                     "<small>Evaporates at heat source · condensate → Cascade HX</small></div>",
                     unsafe_allow_html=True
                 )
                 st.markdown("")
-                _ref_lp = st.selectbox("Refrigerant LP", _avail, key="ref_0")
-                _e1     = st.slider("η_s LP compressor", 0.50, 1.00, 0.85, 0.01, key="eta1")
-                _o1     = st.number_input("Superheat LP [K]", 0.0, 50.0, 10.0, 1.0, key="oh_1")
+                _ref_lp = st.selectbox("Refrigerant LT", _avail, key="ref_0")
+                _e1     = st.slider("η_s LT compressor", 0.50, 1.00, 0.85, 0.01, key="eta1")
+                _o1     = st.number_input("Superheat LT [K]", 0.0, 50.0, 10.0, 1.0, key="oh_1")
 
             with col_hp:
                 st.markdown(
                     "<div style='background:#ffe0e0;border-radius:8px;padding:10px 14px 4px 14px;"
                     "border-left:4px solid #cc2020;color:#3d0a0a'>"
-                    "<b>🔴 HP Circuit – High Pressure</b><br>"
+                    "<b>🔴 HT Circuit – High Temperature</b><br>"
                     "<small>Evaporates from Cascade HX · condenses into heat sink</small></div>",
                     unsafe_allow_html=True
                 )
                 st.markdown("")
-                _ref_hp = st.selectbox("Refrigerant HP", _avail, key="ref_1")
-                _e2     = st.slider("η_s HP compressor", 0.50, 1.00, 0.85, 0.01, key="eta2")
-                _o2     = st.number_input("Superheat HP [K]", 0.0, 50.0, 10.0, 1.0, key="oh_2")
+                _ref_hp = st.selectbox("Refrigerant HT", _avail, key="ref_1")
+                _e2     = st.slider("η_s HT compressor", 0.50, 1.00, 0.85, 0.01, key="eta2")
+                _o2     = st.number_input("Superheat HT [K]", 0.0, 50.0, 10.0, 1.0, key="oh_2")
 
             refrigerant     = f"{_ref_lp}, {_ref_hp}"
             eta_s_values    = [_e1, _e2]
@@ -2977,7 +3331,7 @@ elif st.session_state.page == 'case_generation':
                 "Cascade HX temperature T_casc [°C]",
                 min_value=float(_te_def + 2), max_value=float(_tc_def - 2),
                 value=float(_t_mid_def), step=1.0, key="t_casc",
-                help="LP condensing = HP evaporating temperature level"
+                help="LT condensing = HT evaporating temperature level"
             )
 
         # ── SINGLE-STAGE HTHP ─────────────────────────────────────────────────
@@ -3002,21 +3356,21 @@ elif st.session_state.page == 'case_generation':
                 st.markdown(
                     "<div style='background:#dbeeff;border-radius:8px;padding:10px 14px 4px 14px;"
                     "border-left:4px solid #0d2a44'>"
-                    "<b>LP Stage</b><br>"
-                    "<small>Low-pressure compressor</small></div>",
+                    "<b>LT Stage</b><br>"
+                    "<small>Low-temperature compressor</small></div>",
                     unsafe_allow_html=True
                 )
                 st.markdown("")
-                _e1 = st.slider("η_s LP", 0.50, 1.00, 0.85, 0.01, key="eta1")
+                _e1 = st.slider("η_s LT", 0.50, 1.00, 0.85, 0.01, key="eta1")
                 # IHX on LP side: Variant A (IHXEcon/IHXPC) or single-IHX EconIHX/PCIHX
                 # = any model with exactly 1 IHX (all single-IHX models have it between
                 #   LP outlet and economizer, i.e. on the LP suction side)
                 _lp_has_ihx = _n_ihx >= 1
                 if _lp_has_ihx:
                     _o1 = st.number_input(
-                        "Superheat LP [K]",
+                        "Superheat LT [K]",
                         0.0, 50.0, 5.0, 1.0, key="oh_1",
-                        help="Superheating by the IHX on the LP side (between evaporator and LP compressor inlet)."
+                        help="Superheating by the IHX on the LT side (between evaporator and LT compressor inlet)."
                     )
                 else:
                     _o1 = 0.0
@@ -3025,12 +3379,12 @@ elif st.session_state.page == 'case_generation':
                 st.markdown(
                     "<div style='background:#fff0dd;border-radius:8px;padding:10px 14px 4px 14px;"
                     "border-left:4px solid #c87000;color:#3d2000'>"
-                    "<b>HP Stage</b><br>"
-                    "<small>High-pressure compressor</small></div>",
+                    "<b>HT Stage</b><br>"
+                    "<small>High-temperature compressor</small></div>",
                     unsafe_allow_html=True
                 )
                 st.markdown("")
-                _e2 = st.slider("η_s HP", 0.50, 1.00, 0.85, 0.01, key="eta2")
+                _e2 = st.slider("η_s HT", 0.50, 1.00, 0.85, 0.01, key="eta2")
                 # IHX on HP side only for: IHXPCIHXTrans and Cascade equivalents (nr_ihx >= 2)
                 # For single-IHX EconIHX/PCIHX: IHX is between economizer and HP inlet (Variant B)
                 # → show for Variant B models OR for "both" (IHXPCIHXTrans)
@@ -3043,9 +3397,9 @@ elif st.session_state.page == 'case_generation':
                 _hp_has_ihx = _model_is_varB or _n_ihx >= 2
                 if _hp_has_ihx:
                     _o2 = st.number_input(
-                        "Superheat HP [K]",
+                        "Superheat HT [K]",
                         0.0, 50.0, 5.0, 1.0, key="oh_2",
-                        help="Superheating by the IHX on the HP side (between economizer and HP compressor inlet)."
+                        help="Superheating by the IHX on the HT side (between economizer and HT compressor inlet)."
                     )
                 else:
                     _o2 = 0.0
@@ -3253,7 +3607,7 @@ elif st.session_state.page == 'case_generation':
                         st.markdown(
                             "<div style='background:#1a3a5c;border-radius:6px;"
                             "padding:8px 12px;border-left:3px solid #4da6ff'>"
-                            "<b>🔵 LP Circuit</b></div>", unsafe_allow_html=True)
+                            "<b>🔵 LT Circuit</b></div>", unsafe_allow_html=True)
                         st.write(f"Refrigerant: **{_parts[0]}**")
                         if isinstance(effs, list) and len(effs) >= 1:
                             st.write(f"η_s: {effs[0]:.3f}")
@@ -3263,7 +3617,7 @@ elif st.session_state.page == 'case_generation':
                         st.markdown(
                             "<div style='background:#5c1a1a;border-radius:6px;"
                             "padding:8px 12px;border-left:3px solid #ff6b6b'>"
-                            "<b>🔴 HP Circuit</b></div>", unsafe_allow_html=True)
+                            "<b>🔴 HT Circuit</b></div>", unsafe_allow_html=True)
                         st.write(f"Refrigerant: **{_parts[1] if len(_parts) > 1 else '?'}**")
                         if isinstance(effs, list) and len(effs) >= 2:
                             st.write(f"η_s: {effs[1]:.3f}")
@@ -3275,14 +3629,14 @@ elif st.session_state.page == 'case_generation':
                         st.markdown(
                             "<div style='background:#1a3a5c;border-radius:6px;"
                             "padding:8px 12px;border-left:3px solid #4da6ff'>"
-                            "<b>LP Stage</b></div>", unsafe_allow_html=True)
+                            "<b>LT Stage</b></div>", unsafe_allow_html=True)
                         st.write(f"η_s: {effs[0]:.3f}")
                         if oh: st.write(f"SH: {oh[0]:.1f} K")
                     with col_b:
                         st.markdown(
                             "<div style='background:#5c3a1a;border-radius:6px;"
                             "padding:8px 12px;border-left:3px solid #ffb366'>"
-                            "<b>HP Stage</b></div>", unsafe_allow_html=True)
+                            "<b>HT Stage</b></div>", unsafe_allow_html=True)
                         st.write(f"η_s: {effs[1]:.3f}")
                         if oh and len(oh) > 1: st.write(f"SH: {oh[1]:.1f} K")
                 else:
