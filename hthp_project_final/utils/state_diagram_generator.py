@@ -70,10 +70,24 @@ class StateDiagramGenerator:
             raise ValueError(f"scale must be 'linear' or 'log', got '{scale}'")
 
         try:
-            conn    = self.hp.nw.results['Connection']
-            mask    = conn[wf] == 1.0
-            min_val = float(conn.loc[mask, prop].min())
-            max_val = float(conn.loc[mask, prop].max())
+            conn = self.hp.nw.results['Connection']
+            if wf not in conn.columns:
+                raise KeyError(
+                    f"Fluid-Spalte '{wf}' nicht in den TESPy-Ergebnissen "
+                    f"(vorhanden: {list(conn.columns)}). Passt der Fluidname?"
+                )
+            mask = conn[wf] == 1.0
+            sub  = conn.loc[mask, prop]
+            if sub.empty:
+                raise ValueError(f"keine geloesten Zustandspunkte fuer wf='{wf}'")
+            min_val = float(sub.min())
+            max_val = float(sub.max())
+            if not (np.isfinite(min_val) and np.isfinite(max_val)):
+                raise ValueError(
+                    f"Zustandswerte fuer wf='{wf}', prop='{prop}' sind NaN/Inf - "
+                    f"das Modell ist vermutlich nicht konvergiert. Bitte TESPy-Version "
+                    f"pruefen (heatpumps 1.4.1 benoetigt tespy>=0.8.0,<0.9.0)."
+                )
 
             if scale == 'linear':
                 delta = max_val - min_val

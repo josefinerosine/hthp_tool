@@ -44,10 +44,62 @@ Modellquellen:
 
 from __future__ import annotations
 
+import importlib
 import traceback
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# heatpumps-Import  (robust gegen unterschiedliche Installations-Layouts)
+# ══════════════════════════════════════════════════════════════════════════════
+_HEATPUMPS_CACHE: tuple | None = None
+
+
+def _load_heatpumps():
+    """
+    Lädt (models_module, get_params) aus der heatpumps-Bibliothek – unabhängig
+    davon, wie sie bereitgestellt wird:
+
+      1. 'heatpumps.models' / 'heatpumps.parameters'
+         → wenn das Paket installiert ist (pip install heatpumps / pip install -e .)
+           oder der innere Paketordner 'heatpumps/' (mit models/, parameters.py)
+           direkt auf dem Python-Pfad liegt.
+      2. 'heatpumps.src.heatpumps.models' / '...parameters'
+         → wenn der rohe Repo-Ordner (Repo-Wurzel 'heatpumps/' mit 'src/heatpumps/')
+           auf dem Python-Pfad liegt.
+
+    Der Fehler 'No module named heatpumps.src' entsteht, wenn ein installiertes
+    (flaches) heatpumps-Paket den rohen Repo-Ordner überlagert. Diese Funktion
+    fängt genau diesen Fall ab.
+    """
+    global _HEATPUMPS_CACHE
+    if _HEATPUMPS_CACHE is not None:
+        return _HEATPUMPS_CACHE
+
+    candidates = (
+        ('heatpumps.models',                'heatpumps.parameters'),
+        ('heatpumps.src.heatpumps.models',  'heatpumps.src.heatpumps.parameters'),
+    )
+    last_err: Exception | None = None
+    for models_path, params_path in candidates:
+        try:
+            models_mod = importlib.import_module(models_path)
+            params_mod = importlib.import_module(params_path)
+            _HEATPUMPS_CACHE = (models_mod, params_mod.get_params)
+            return _HEATPUMPS_CACHE
+        except ImportError as e:
+            last_err = e
+
+    raise ImportError(
+        "heatpumps-Bibliothek nicht gefunden bzw. nicht importierbar.\n"
+        "Bitte eine der folgenden Varianten sicherstellen:\n"
+        "  • im heatpumps-Repo-Ordner  'pip install -e .'  ausführen, oder\n"
+        "  • 'pip install heatpumps'  ausführen, oder\n"
+        "  • den heatpumps-Repo-Ordner (mit  src/heatpumps/ ) auf den Python-Pfad legen.\n"
+        f"Letzter Import-Fehler: {last_err}"
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -350,14 +402,7 @@ def _run_hthp(case_cfg: dict, params: dict, verbose: bool) -> CaseResult:
         print(f"  Modell: {model_name}  [{tag}]")
 
     # ── 1. Imports ────────────────────────────────────────────────────────
-    try:
-        import heatpumps.src.heatpumps.models as _hp_models
-        from heatpumps.src.heatpumps.parameters import get_params
-    except ImportError as e:
-        raise ImportError(
-            f"heatpumps-Bibliothek nicht gefunden. "
-            f"Bitte in hthp_project_final/heatpumps installieren.\n{e}"
-        )
+    _hp_models, get_params = _load_heatpumps()
 
     ModelClass = getattr(_hp_models, model_name, None)
     if ModelClass is None:
@@ -973,11 +1018,7 @@ def _run_hthp_mvr(case_cfg: dict, params: dict, verbose: bool) -> CaseResult:
     case_id = case_cfg['id']
 
     # ── Imports ───────────────────────────────────────────────────────────
-    try:
-        import heatpumps.src.heatpumps.models as _hp_models
-        from heatpumps.src.heatpumps.parameters import get_params
-    except ImportError as e:
-        raise ImportError(f"heatpumps-Bibliothek nicht gefunden.\n{e}")
+    _hp_models, get_params = _load_heatpumps()
 
     try:
         from my_models.MVRMultiStage import MVRMultiStage

@@ -1897,11 +1897,12 @@ def _render_refrigerant_overview(params: dict):
 # ============================================================================
 def _render_compressor_overview(params: dict):
     """Renders the compressor selector overview – calls CompressorSelector if available."""
-    st.markdown("### 🔩 Compressor Overview (DORIN HT Series)")
+    st.markdown("### 🔩 Compressor Overview")
     st.write(
-        "Suitable DORIN HT compressors are looked up for the operating point derived from your "
-        "questionnaire. The selector reads the **ExcelDorinExtraction** results folder; "
+        "Suitable compressors are looked up for the operating point derived from your "
+        "questionnaire. The selector reads the **CompressorData** results folder; "
         "if it is not present, an informational placeholder is shown."
+        "The compressor library is extendable with additional Data from other manufacturers."
     )
 
     # --- Derive tc / te / tsh from questionnaire ---------------------------
@@ -1943,7 +1944,7 @@ def _render_compressor_overview(params: dict):
     if st.button("🔍 Search compressors", key="comp_search_btn"):
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-        results_dir = os.path.join(base_dir, 'ExcelDorinExtraction', 'results', 'compressor_data')
+        results_dir = os.path.join(base_dir, 'ExcelDorinExtraction', 'results')#, 'compressor_data')
         excel_file  = os.path.join(base_dir, 'ExcelDorinExtraction', 'Compressori_DORIN_HT_rev8.xlsm')
 
         if not os.path.isdir(results_dir):

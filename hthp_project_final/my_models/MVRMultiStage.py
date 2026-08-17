@@ -9,7 +9,7 @@ Features:
 - Flexible Anzahl von Verdichterstufen (2-5 empfohlen)
 - Wassereinspritzung zwischen Stufen zur Zwischenkühlung
 - Automatische optimale Druckverteilung
-- TurboCompressor für jede Stufe
+- Compressor für jede Stufe
 - SEI-Berechnung (Specific Energy Input) statt COP
 
 Änderungen gegenüber alter Version:
@@ -20,7 +20,7 @@ Features:
 """
 
 import numpy as np
-from tespy.components import Merge, Sink, Source, TurboCompressor
+from tespy.components import Compressor, Merge, Sink, Source
 from tespy.connections import Bus, Connection, Ref
 from tespy.tools.characteristics import CharLine
 
@@ -78,7 +78,7 @@ class MVRMultiStage(MVRBase):
         # Verdichterstufen und Wassereinspritzung
         for stage in range(1, self.n_stages + 1):
             # Verdichter für diese Stufe
-            self.comps[f'comp_{stage}'] = TurboCompressor(f'Compressor Stage {stage}')
+            self.comps[f'comp_{stage}'] = Compressor(f'Compressor Stage {stage}')
             
             # Wassereinspritzung nach dieser Stufe (außer nach letzter Stufe)
             if stage < self.n_stages:
